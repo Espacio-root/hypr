@@ -18,6 +18,10 @@ struct Args {
     /// Player Application
     #[arg(value_enum, short, long)]
     player: Option<Actions>,
+
+    /// Increase/Decrease in steps of 1
+    #[arg(value_enum, short, long)]
+    quantise: bool,
 }
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -35,7 +39,7 @@ enum Actions {
     Mute,
 }
 
-fn action_pamixer(nsink: &str, srce: &str, action: &str, step:u8) {
+fn action_pamixer(nsink: &str, srce: &str, action: &str, step: u8) {
     let cmd = format!("pamixer '{}' -'{}' {}", srce, action, step);
     execute(&cmd).unwrap();
 
@@ -60,29 +64,45 @@ fn mute(nsink: &str, ctrl: &str, srce: &str) {
 }
 
 fn notify_vol(volume: u32, nsink: &str) {
-    let angle = ((volume + 2)/5)*5; 
+    let angle = ((volume + 2) / 5) * 5;
     let icon = format!("{}/vol-{}.svg", ICODIR, angle);
     // println!("{}, {}", icon, angle);
-    let cmd = format!("notify-send -a pulse -r 91190 -t 800 -i {} '{}{}' '{}'", icon, pad_progress(volume, 5), get_progress_bar(volume, 10), nsink);
+    let cmd = format!(
+        "notify-send -a pulse -r 91190 -t 800 -i {} '{}{}' '{}'",
+        icon,
+        pad_progress(volume, 5),
+        get_progress_bar(volume, 10),
+        nsink
+    );
     execute(&cmd).unwrap();
 }
 
 fn notify_mute(srce: &str, nsink: &str) {
     let cmd = format!("pamixer '{}' --get-mute", srce);
     let mute = execute(&cmd).unwrap().parse::<bool>().unwrap();
-    let dvce = if srce == "--default-source" {"mic"} else {"speaker"};
-    
-    let cmd = if mute {
-        format!("notify-send -a pulse -r 91190 -t 800 -i {}/muted-{}.svg muted '{}'", ICODIR, dvce, nsink)
+    let dvce = if srce == "--default-source" {
+        "mic"
     } else {
-        format!("notify-send -a pulse -r 91190 -t 800 -i {}/unmuted-{}.svg unmuted '{}'", ICODIR, dvce, nsink)
+        "speaker"
+    };
+
+    let cmd = if mute {
+        format!(
+            "notify-send -a pulse -r 91190 -t 800 -i {}/muted-{}.svg muted '{}'",
+            ICODIR, dvce, nsink
+        )
+    } else {
+        format!(
+            "notify-send -a pulse -r 91190 -t 800 -i {}/unmuted-{}.svg unmuted '{}'",
+            ICODIR, dvce, nsink
+        )
     };
     execute(&cmd).unwrap();
 }
 
 fn main() {
     let args = Args::parse();
-    let step: u8 = 5;
+    let step: u8 = if args.quantise { 1 } else { 5 };
 
     if let Some(input) = args.input {
         let cmd = execute("pamixer --list-sources").unwrap();

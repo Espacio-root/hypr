@@ -19,6 +19,10 @@ struct Args {
     /// Decrease Brightness
     #[arg(value_enum, short, long)]
     decrease: bool,
+
+    /// Increase/Decrease in steps of 1
+    #[arg(value_enum, short, long)]
+    quantise: bool,
 }
 
 fn get_brightness(device: &str) -> u32 {
@@ -64,13 +68,13 @@ fn main() {
     let args = Args::parse();
     let device = get_device();
     let cmd = if args.increase {
-        if get_brightness(device) < 10 {
+        if get_brightness(device) < 10 || args.quantise {
             "set +1%"
         } else {
             "set +5%"
         }
     } else if args.decrease {
-        if get_brightness(device) <= 10 {
+        if get_brightness(device) <= 10 || args.quantise {
             "set 1%-"
         } else {
             "set 5%-"
