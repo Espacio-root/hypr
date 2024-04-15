@@ -39,31 +39,30 @@ fn send_notification(device: &str) {
     execute(&cmd).unwrap();
 }
 
-fn get_device() -> Result<String> {
-    let output = execute("hyprctl monitors -j").unwrap();
-    let json: Value = serde_json::from_str(&output)?;
-
-    let device = match json {
-        Value::Array(arr) => {
-            let focused_monitor = arr.into_iter().find(|x| x["focused"] == Value::Bool(true));
-            match focused_monitor {
-                Some(monitor) => monitor.get("name").unwrap().to_string(),
-                None => "eDP-1".to_string()
-            }
-        },
-        _ => "eDP-1".to_string()
-    };
-    Ok(device)
-}
-
-fn main() {
-    let args = Args::parse();
+fn get_device() -> Result<&'static str> {
     let map: HashMap<&str, &str> = hashmap! {
         "eDP-1" => "intel_backlight",
         "DP-1" => "asus_screenpad"
     };
-    let raw_device = get_device().unwrap_or("eDP-1".to_string()).replace("\"", "");
-    let device = map.get(raw_device.as_str()).unwrap_or(&"intel_backlight");
+    let output = execute("hyprctl monitors -j").unwrap();
+    let json: Value = serde_json::from_str(&output)?;
+
+    let device = match &json {
+        Value::Array(arr) => {
+            let focused_monitor = arr.iter().find(|x| x["focused"] == Value::Bool(true));
+            match focused_monitor {
+                Some(monitor) => monitor["name"].as_str().unwrap(),
+                None => "eDP-1"
+            }
+        },
+        _ => "eDP-1"
+    };
+    Ok(*map.get(device).unwrap())
+}
+
+fn main() {
+    let args = Args::parse();
+    let device = get_device().unwrap_or(&"intel_backlight");
     let cmd = if args.increase {
         if get_brightness(device) < 10 {
             "set +1%"
