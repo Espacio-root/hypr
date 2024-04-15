@@ -39,13 +39,13 @@ fn send_notification(device: &str) {
     execute(&cmd).unwrap();
 }
 
-fn get_device() -> Result<&'static str> {
+fn get_device() -> &'static str {
     let map: HashMap<&str, &str> = hashmap! {
         "eDP-1" => "intel_backlight",
         "DP-1" => "asus_screenpad"
     };
     let output = execute("hyprctl monitors -j").unwrap();
-    let json: Value = serde_json::from_str(&output)?;
+    let json: Value = serde_json::from_str(&output).unwrap();
 
     let device = match &json {
         Value::Array(arr) => {
@@ -57,12 +57,12 @@ fn get_device() -> Result<&'static str> {
         },
         _ => "eDP-1"
     };
-    Ok(*map.get(device).unwrap())
+    *map.get(device).unwrap_or(&"intel_backlight")
 }
 
 fn main() {
     let args = Args::parse();
-    let device = get_device().unwrap_or(&"intel_backlight");
+    let device = get_device();
     let cmd = if args.increase {
         if get_brightness(device) < 10 {
             "set +1%"

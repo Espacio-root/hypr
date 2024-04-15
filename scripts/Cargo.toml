@@ -1,4 +1,4 @@
 [workspace]
 members = [ "brightnesscontrol", "swwwallpaper",
   "utils"
-, "volumecontrol"]
+, "volumecontrol", "writemode"]
