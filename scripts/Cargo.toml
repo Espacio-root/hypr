@@ -1,4 +1,4 @@
 [workspace]
-members = [ "brightnesscontrol",
+members = [ "brightnesscontrol", "swwwallpaper",
   "utils"
 , "volumecontrol"]
